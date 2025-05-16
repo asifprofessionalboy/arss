@@ -1,0 +1,24 @@
+﻿
+@{
+    ViewData["Title"] = "AttendanceReport";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    
+  
+}
+
+<style>
+   
+</style>
+
+
+<div class="container">
+    <div class="col-sm-1 text-start">
+
+
+        <a asp-action="GeoFencing" asp-controller="Geo" class="control-label"><i class="fa fa-arrow-left" aria-hidden="true" style="font-size:16px;"></i>&nbsp;&nbsp;Back</a>
+    </div>
+    <iframe src="@ViewBag.ReportUrl" width="" height="600px" frameborder="0" class="report"></iframe>
+</div>
+
+
+

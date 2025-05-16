@@ -1,0 +1,500 @@
+﻿@model GFAS.Models.AppLocationMaster
+@{
+    ViewData["Title"] = "LocationMaster";
+}
+<div class="card rounded-9">
+
+
+    <div class="row align-items-center form-group">
+        <div class="col-md-9">
+            <!-- Search Form -->
+            <form method="get" action="@Url.Action("LocationMaster")" style="display:flex;">
+
+                <div class="col-md-4">
+
+                    <input type="text" name="SearchString" class="form-control" value="@ViewBag.SearchString" placeholder="Search by Worksite ..." autocomplete="off" />
+                </div>
+
+                <div class="col-md-3" style="padding-left:1%;">
+
+                    <button type="submit" class="btn btn-primary">Search</button>
+                </div>
+
+
+
+            </form>
+        </div>
+        <div class="col-md-3 mb-2 text-end">
+            <button id="showFormButton2" class="btn btn-primary">New</button>
+        </div>
+
+    </div>
+
+
+    <div class="col-md-12">
+        <table class="table table-bordered" id="myTable">
+            <thead class="table" style="background-color: #d2b1ff;color: #000000;">
+                <tr>
+                    <th width="75%">Worksite</th>
+
+                    <th width="">Longitude</th>
+                    <th width="">Latitude</th>
+
+                </tr>
+            </thead>
+            <tbody>
+                @if (ViewBag.pList != null)
+                {
+                    @foreach (var item in ViewBag.pList)
+                    {
+                        <tr>
+                            <td>
+                                <a href="javascript:void(0);" data-id="@item.Id" class="OpenFilledForm btn gridbtn" style="text-decoration:none;background-color:#ffffff;font-weight:bolder;color:darkblue;">
+                                    @item.WorkSite
+                                </a>
+                            </td>
+
+                            <td>@item.Longitude</td>
+                            <td>@item.Latitude</td>
+
+                        </tr>
+                    }
+                }
+                else
+                {
+                    <tr>
+                        <td colspan="3">No data available</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <div class="text-center">
+            @if (ViewBag.TotalPages > 1)
+            {
+                <nav aria-label="Page navigation" style="font-size:12px;" class="d-flex justify-content-center">
+                    <ul class="pagination">
+                        <!-- Previous Button -->
+                        <li class="page-item @(ViewBag.CurrentPage == 1 ? "disabled" : "")">
+                            <a class="page-link" asp-action="LocationMaster"
+                               asp-route-page="@(ViewBag.CurrentPage - 1)"
+                               asp-route-searchString="@ViewBag.SearchString">
+                                Previous
+                            </a>
+                        </li>
+
+                        <!-- Show Page Numbers -->
+                        @for (int i = Math.Max(1, ViewBag.CurrentPage - 1); i <= Math.Min(ViewBag.CurrentPage + 1, ViewBag.TotalPages); i++)
+                        {
+                            <li class="page-item @(ViewBag.CurrentPage == i ? "active" : "")">
+                                <a class="page-link" asp-action="LocationMaster"
+                                   asp-route-page="@i"
+                                   asp-route-searchString="@ViewBag.SearchString">
+                                    @i
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Next Button -->
+                        <li class="page-item @(ViewBag.CurrentPage == ViewBag.TotalPages ? "disabled" : "")">
+                            <a class="page-link" asp-action="LocationMaster"
+                               asp-route-page="@(ViewBag.CurrentPage + 1)"
+                               asp-route-searchString="@ViewBag.SearchString">
+                                Next
+                            </a>
+                        </li>
+                    </ul>
+                </nav>
+            }
+        </div>
+
+
+    </div>
+</div>
+<div id="formContainer" style="display:none;">
+    <form asp-action="LocationMaster" asp-controller="Master" id="form2" method="post">
+        @Html.AntiForgeryToken()
+        <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+        <div class="card rounded-9">
+            <div class="card-header text-center" style="background-color: #bbb8bf;color: #000000;font-weight:bold;">
+                Location Master Entry
+            </div>
+            <div class="col-md-12">
+                <fieldset style="border:1px solid #bfbebe;padding:5px 20px 5px 20px;border-radius:6px;">
+                    <div class="row">
+
+                        <div class="form-group row">
+
+                            <div class="col-sm-1 d-flex">
+                                <label asp-for="WorkSite" class="control-label">Worksite</label>
+                            </div>
+                            <div class="col-sm-3">
+                                <input asp-for="WorkSite" class="form-control form-control-sm WorkSiteInput" id="WorkSite" placeholder="" required autocomplete="off" />
+
+                            </div>
+                            <div class="col-sm-1 d-flex">
+                                <label asp-for="Range" class="control-label">Range</label>
+                            </div>
+                            <div class="col-sm-2">
+                                <input asp-for="Range" class="form-control form-control-sm rangeInput" id="Range" placeholder="" required autocomplete="off" />
+
+                            </div>
+                            <div class="col-md-5">
+                                <div class="card rounded-j">
+                                    <div class="row">
+                                        <div class="col-sm-5 d-flex align-items-center teamtext">
+                                            <label class="control-label">Latitude</label>
+                                        </div>
+                                        <div class="col-sm-4 d-flex align-items-center teamtext">
+                                            <label class="control-label">Longitude</label>
+                                        </div>
+                                    </div>
+                                    <div id="locationContainer">
+                                        <div class="location-row">
+                                            <div class="row mt-2">
+                                                <div class="col-sm-5 d-flex align-items-center">
+                                                    <input asp-for="Latitude" class="form-control form-control-sm LatitudeInput" id="Latitude" placeholder="Enter Latitude" required autocomplete="off" />
+                                                </div>
+                                                <div class="col-sm-5 d-flex align-items-center">
+                                                    <input asp-for="Latitude" name="Longitude[]" class="form-control form-control-sm LongInput" id="Longitude" placeholder="Enter Longitude" required autocomplete="off" />
+                                                </div>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    @*  <div class="text-center mt-2">
+                                    <button type="button" class="btn btn-primary col-sm-2 p-0" id="addRowButton">Add</button>
+                                    </div> *@
+                                </div>
+                            </div>
+
+                        </div>
+
+
+
+
+
+
+                        <input type="hidden" name="Id" value="@Model.Id" />
+                        <div class="form-group row mt-2">
+
+                            <input asp-for="Id" type="text" value="@Model.Id" id="LocationId" hidden />
+                            <input name="CreatedOn" value="@Model.CreatedOn" hidden id="CreatedOn" />
+                            <input name="CreatedBy" value="@ViewBag.CreatedBy" hidden id="CreatedBy" />
+                        </div>
+                        <input type="hidden" name="actionType" id="actionType" value="" />
+                        <div class="form-group row">
+                            <div class="col-sm-12 text-center">
+                                <!-- Submit Button -->
+                                <button type="button" id="submitButton" name="actionType" class="btn btn-primary">Submit</button>
+                                <button type="button" id="deleteButton" name="actionType" class="btn btn-danger">Delete</button>
+
+                            </div>
+                        </div>
+
+
+
+
+
+
+                    </div>
+                </fieldset>
+
+            </div>
+        </div>
+    </form>
+
+
+
+    @*  <script>
+    document.getElementById('submitButton').addEventListener('click', validateForm);
+    document.getElementById('deleteButton').addEventListener('click', validateForm);
+
+    function validateForm(event)
+    {
+    event.preventDefault();
+
+
+    var isValid = true;
+    var elements = this.querySelectorAll('input, select, textarea');
+    var othersDiv = document.getElementById('Others');
+    var form = document.getElementById('form2');
+    var attachInput = document.getElementById('fileInput');
+
+    elements.forEach(function (element) {
+    // Skip validation for certain fields
+    if (['ApprovalFile', 'dropdown-template', 'status', 'remarks', 'StatusField', 'LocationId',
+    'CreatedBy', 'actionType', 'Lcode', 'CreatedOn'].includes(element.id)) {
+    return;
+    }
+
+    // Perform validation
+    if (element.value.trim() === '') {
+    isValid = false;
+    element.classList.add('is-invalid');
+    } else {
+    element.classList.remove('is-invalid');
+    }
+    });
+
+    // If all validations pass, submit the form
+    if (isValid) {
+    form.submit(); // Directly submit the form
+    }
+    }
+
+    </script> *@
+
+    <script>
+        function setAction(action, event) {
+            if (action === 'Delete') {
+                // Show confirmation alert before deleting
+                const confirmDelete = confirm("Are you sure you want to delete this record?");
+                if (!confirmDelete) {
+                    // Prevent form submission if the user cancels the deletion
+                    event.preventDefault();
+                    return;
+                }
+            }
+            // Set the action type value
+            document.getElementById('actionType').value = action;
+        }
+
+
+    </script>
+
+
+    <script>
+
+        setTimeout(function () {
+            var alertElement = document.querySelector('.alert');
+            if (alertElement) {
+                alertElement.classList.remove('show');
+                alertElement.classList.add('fade');
+                setTimeout(function () {
+                    alertElement.remove();
+                }, 500);
+            }
+        }, 5000);
+    </script>
+
+
+
+</div>
+
+
+@if (TempData["Psum"] != null)
+{
+    <script>alert('@TempData["Psum"]');</script>
+}
+@if (TempData["msg"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["msg"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+
+@if (TempData["Updatedmsg"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Updatedmsg"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+
+}
+
+@if (TempData["Dltmsg"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Dltmsg"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+<script>
+    $(document).ready(function () {
+
+        function validateForm() {
+            let isValid = true;
+
+            // Remove existing validation styles
+            $('.is-invalid').removeClass('is-invalid');
+
+            // Check Worksite field
+            if ($('#WorkSite').val().trim() === '') {
+                $('#WorkSite').addClass('is-invalid');
+                isValid = false;
+            }
+
+            // Check all Latitude and Longitude fields
+            $('.location-row').each(function () {
+                let latitude = $(this).find('.LatitudeInput');
+                let longitude = $(this).find('.LongInput');
+
+                if (latitude.val().trim() === '') {
+                    latitude.addClass('is-invalid');
+                    isValid = false;
+                }
+
+                if (longitude.val().trim() === '') {
+                    longitude.addClass('is-invalid');
+                    isValid = false;
+                }
+            });
+
+            return isValid;
+        }
+
+        // Function to set the actionType before form submission
+        function setAction(actionType, event = null) {
+            if (event) event.preventDefault();
+            $('#actionType').val(actionType);
+            $('#form2').submit();
+        }
+
+        // Show the form for adding a new entry
+        $('#showFormButton2').click(function () {
+            $('#formContainer').show();
+            $('#form2')[0].reset(); // Clear form fields
+            $('#deleteButton').hide();
+            $('#addRowButton').show();
+        });
+
+        // Open filled form for editing
+        $(".OpenFilledForm").click(function (e) {
+            e.preventDefault();
+            $('#deleteButton').show();
+            $('#addRowButton').hide();
+
+            var id = $(this).data("id");
+            $.ajax({
+                url: '@Url.Action("LocationMaster", "Master")',
+                type: 'GET',
+                data: { id: id },
+                success: function (response) {
+                    // Populate form fields with response data
+                    $('#form2 #LocationId').val(response.id);
+                    $('#form2 #CreatedBy').val(response.createdby);
+                    $('#form2 #CreatedOn').val(response.createdon);
+                    $('#form2 #WorkSite').val(response.worksite);
+                    $('#form2 #Longitude').val(response.longitude);
+                    $('#form2 #Latitude').val(response.latitude);
+                    $('#form2 #Range').val(response.range);
+
+
+                    // Show the form
+                    $('#formContainer').show();
+                },
+                error: function () {
+                    alert("An error occurred while loading the form data.");
+                }
+            });
+        });
+
+        // Add a new row dynamically
+        $('#addRowButton').click(function () {
+            const newRow = `
+                                    <div class="location-row">
+                                        <div class="row mt-2">
+                                            <div class="col-sm-5 d-flex align-items-center">
+                                                        <input asp-for="Latitude" name="Latitude[]" class="form-control form-control-sm LatitudeInput" placeholder="Enter Latitude" required autocomplete="off"/>
+                                            </div>
+                                            <div class="col-sm-5 d-flex align-items-center">
+                                                        <input asp-for="Longitude" name="Longitude[]" class="form-control form-control-sm LongInput" placeholder="Enter Longitude" required autocomplete="off"/>
+                                            </div>
+                                            <div class="col-sm-2 d-flex align-items-center">
+                                                <button type="button" class="btn btn-danger btn-sm remove-row">Remove</button>
+                                            </div>
+                                        </div>
+                                    </div>`;
+            $('#locationContainer').append(newRow);
+        });
+
+        // Remove a row dynamically
+        $(document).on('click', '.remove-row', function () {
+            $(this).closest('.location-row').remove();
+        });
+
+        // Handle the submit button click
+        $('#submitButton').click(function (e) {
+            e.preventDefault();
+
+            // Validate form fields
+            if (!validateForm()) {
+                alert('Please fill in all required fields.');
+                return;
+            }
+
+            const id = $('#LocationId').val();
+            const rowsData = [];
+            $('.location-row').each(function () {
+                const latitude = $(this).find('.LatitudeInput').val();
+                const longitude = $(this).find('.LongInput').val();
+                const worksite = $('#WorkSite').val();
+                const range = $('#Range').val();
+
+                rowsData.push({
+                    WorkSite: worksite,
+                    Range: range,
+                    Latitude: parseFloat(latitude),
+                    Longitude: parseFloat(longitude),
+                    Id: id
+                });
+            });
+
+            $.ajax({
+                url: '@Url.Action("LocationMaster", "Master")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({
+                    Id: id,
+                    appLocations: rowsData,
+                    actionType: "Submit"
+                }),
+                success: function (response) {
+                    alert('Locations saved successfully!');
+                    $('#formContainer').hide();
+                },
+                error: function () {
+                    alert('An error occurred while saving the locations.');
+                }
+            });
+        });
+
+
+
+        // Handle the delete button click
+        $('#deleteButton').click(function (e) {
+            e.preventDefault();
+            const id = $('#LocationId').val();
+            const rowsData = [];
+            $('.location-row').each(function () {
+                //const id = $(this).data('id');
+                rowsData.push({ Id: id });
+            });
+
+            $.ajax({
+                url: '@Url.Action("LocationMaster", "Master")',
+                type: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify({ Id: id, appLocations: rowsData, actionType: "Delete" }),
+                success: function (response) {
+                    alert('Locations deleted successfully!');
+                    $('#formContainer').hide();
+                },
+                error: function () {
+                    alert('An error occurred while deleting the locations.');
+                }
+            });
+        });
+    });
+</script>
+
+
+
+

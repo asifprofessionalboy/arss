@@ -1,0 +1,67 @@
+﻿@{
+    ViewData["Title"] = "Image Viewer";
+    var imagePath = ViewBag.ImagePath as string;
+    var userName = Context.Request.Cookies["UserName"];
+    var timestamp = DateTime.Now.Ticks;
+}
+
+
+
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <!-- Base Image -->
+        <div class="col-md-4 text-center">
+            <div class="card shadow-lg border-0">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Base Image</h4>
+
+                    @if (!string.IsNullOrEmpty(ViewBag.BaseImagePath))
+                    {
+                        <img id="baseImage" src="@($"{ViewBag.BaseImagePath}?v={timestamp}")" class="img-fluid rounded shadow" style="max-height: 170px;" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mt-3">
+                            No image available for this user.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Captured Image -->
+        <div class="col-md-4 text-center">
+            <div class="card shadow-lg border-0">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Current Captured Image</h4>
+
+                    @if (!string.IsNullOrEmpty(ViewBag.CapturedImagePath))
+                    {
+                        <img id="capturedImage" src="@($"{ViewBag.CapturedImagePath}?v={timestamp}")" class="img-fluid rounded shadow" style="max-height: 170px;" />
+                    }
+                    else
+                    {
+                        <div class="alert alert-warning mt-3">
+                            No captured image available.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Attendance Location -->
+        <div class="col-md-4 text-center">
+            <div class="card shadow-lg border-0">
+                <div class="card-body">
+                    <h4 class="card-title mb-4">Attendance Location</h4>
+                    <p>@ViewBag.AttendanceLocation</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+</script>
+

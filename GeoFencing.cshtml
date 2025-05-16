@@ -1,0 +1,282 @@
+﻿
+@{
+    ViewData["Title"] = "GeoFencing";
+}
+
+<style>
+
+   
+    video {
+        transform: scaleX(-1);
+        -webkit-transform: scaleX(-1); 
+        -moz-transform: scaleX(-1);
+    }
+
+</style>
+
+
+<audio id="successSound" src="https://notificationsounds.com/storage/sounds/files/mp3/eventually-590.mp3"></audio>
+<audio id="errorSound" src="https://notificationsounds.com/storage/sounds/files/mp3/glitch-589.mp3"></audio>
+
+<form asp-action="AttendanceData" id="form" asp-controller="Geo" method="post">
+    <div class="form-group text-center">
+        <video id="video" width="320" height="240" autoplay playsinline></video>
+        <canvas id="canvas" style="display: none;"></canvas>
+    </div>
+
+    <input type="hidden" name="Type" id="EntryType" />
+
+    <div class="mt-5 form-group">
+        <div class="col d-flex justify-content-center mb-4">
+            @if (ViewBag.InOut == "O" || string.IsNullOrEmpty(ViewBag.InOut))
+            {
+                <button type="button" class="Btn" id="PunchIn" onclick="captureImageAndSubmit('Punch In')">
+                    Punch In
+                </button>
+            }
+        </div>
+
+        <div class="col d-flex justify-content-center">
+            @if (ViewBag.InOut == "I")
+            {
+                <button type="button" class="Btn2" id="PunchOut" onclick="captureImageAndSubmit('Punch Out')">
+                    Punch Out
+                </button>
+            }
+        </div>
+
+    </div>
+
+  
+</form>
+
+
+
+
+
+<script>
+    const video = document.getElementById("video");
+    const canvas = document.getElementById("canvas");
+    const EntryTypeInput = document.getElementById("EntryType");
+    const successSound = document.getElementById("successSound");
+    const errorSound = document.getElementById("errorSound");
+
+    navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } })
+        .then(function (stream) {
+            let video = document.getElementById("video");
+            video.srcObject = stream;
+            video.play();
+        })
+        .catch(function (error) {
+            console.error("Error accessing camera: ", error);
+        });
+
+ 
+    function captureImageAndSubmit(entryType) {
+        EntryTypeInput.value = entryType;
+
+        const context = canvas.getContext("2d");
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+        const imageData = canvas.toDataURL("image/jpeg"); // Save as JPG
+
+        
+        Swal.fire({
+            title: "Verifying Face...",
+            allowOutsideClick: false,
+            showConfirmButton: false,
+            didOpen: () => {
+                Swal.showLoading();
+            }
+        });
+
+       
+       
+
+        fetch("/TSUISLARS/Geo/AttendanceData", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                Type: entryType,
+                ImageData: imageData
+            })
+        })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    var now = new Date();
+                    var formattedDateTime = now.toLocaleString();
+                    successSound.play();
+                    triggerHapticFeedback("success");
+
+                    Swal.fire({
+                        title: "Face Matched!",
+                        text: "Attendance Recorded.\nDate & Time: " + formattedDateTime,
+                        icon: "success",
+                        timer: 3000,
+                        showConfirmButton: false
+                    }).then(() => {
+                        location.reload();  
+                    }); 
+
+                } else {
+                    errorSound.play();
+                    triggerHapticFeedback("error");
+                    var now = new Date();
+                    var formattedDateTime = now.toLocaleString();
+                    Swal.fire({
+                        title: "Face Not Recognized.",
+                        text: "Click the button again to retry.\nDate & Time: " + formattedDateTime,
+                        icon: "error",
+                        confirmButtonText: "Retry"
+                    });
+                }
+            })
+            .catch(error => {
+                console.error("Error:", error);
+                triggerHapticFeedback("error");
+
+                Swal.fire({
+                    title: "Error!",
+                    text: "An error occurred while processing your request.",
+                    icon: "error"
+                });
+            });
+            
+    }
+
+    function triggerHapticFeedback(type) {
+        if ("vibrate" in navigator) {
+            if (type === "success") {
+                navigator.vibrate(100); 
+            } else if (type === "error") {
+                navigator.vibrate([200, 100, 200]); 
+            }
+        }
+    }
+</script>
+
+
+
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
+
+
+
+<script>
+    function OnOff() {
+        setTimeout(() => {
+            var punchIn = document.getElementById('PunchIn');
+            var punchOut = document.getElementById('PunchOut');
+
+           
+            if (punchIn) {
+                punchIn.disabled = true;
+                punchIn.classList.add("disabled");
+            }
+            if (punchOut) {
+                punchOut.disabled = true;
+                punchOut.classList.add("disabled");
+            }
+
+            Swal.fire({
+                title: 'Please wait...',
+                text: 'Fetching your current location.',
+                allowOutsideClick: false,
+                didOpen: () => {
+                    Swal.showLoading();
+                }
+            });
+
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function (position) {
+                        Swal.close();
+
+                        const lat = roundTo(position.coords.latitude, 6);
+                        const lon = roundTo(position.coords.longitude, 6);
+                        // const lon = 22.79714;
+                        // const lon = 86.183471;
+
+                        const locations = @Html.Raw(Json.Serialize(ViewBag.PolyData));
+                        
+
+                        let isInsideRadius = false;
+                        let minDistance = Number.MAX_VALUE;
+
+                        locations.forEach((location) => {
+                            const allowedRange = parseFloat(location.range || location.Range);
+                            const distance = calculateDistance(lat, lon, location.latitude || location.Latitude, location.longitude || location.Longitude);
+                            //console.log(`Distance to location (${location.latitude}, ${location.longitude}): ${Math.round(distance)} meters`);
+
+                            if (distance <= allowedRange) {
+                                isInsideRadius = true;
+                            } else {
+                                minDistance = Math.min(minDistance, distance);
+                            }
+                        });
+
+                        if (isInsideRadius) {
+                            if (punchIn) {
+                                punchIn.disabled = false;
+                                punchIn.classList.remove("disabled");
+                            }
+                            if (punchOut) {
+                                punchOut.disabled = false;
+                                punchOut.classList.remove("disabled");
+                            }
+                        } else {
+                            Swal.fire({
+                                icon: "error",
+                                title: "Out of Range",
+                                text: `You are ${Math.round(minDistance)} meters away from the allowed location!`
+                            });
+                        }
+                    },
+                    function (error) {
+                        Swal.close();
+                        Swal.fire({
+                            title: "Error Fetching Location!",
+                            text: "please check your location permission or enable location",
+                            icon: "error",
+                            confirmButtonText: "OK"
+                        });
+                    },
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 10000,
+                        maximumAge: 0
+                    }
+                );
+            } else {
+                Swal.close();
+                alert("Geolocation is not supported by this browser");
+            }
+        }, 500); 
+    }
+
+   
+    window.onload = OnOff;
+
+    function calculateDistance(lat1, lon1, lat2, lon2) {
+        const R = 6371000;
+        const toRad = angle => (angle * Math.PI) / 180;
+        let dLat = toRad(lat2 - lat1);
+        let dLon = toRad(lon2 - lon1);
+        let a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) *
+            Math.sin(dLon / 2) * Math.sin(dLon / 2);
+        let c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        return R * c;
+    }
+
+    function roundTo(num, places) {
+        return +(Math.round(num + "e" + places) + "e-" + places);
+    }
+
+    window.onload = OnOff;
+</script>
